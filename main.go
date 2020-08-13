@@ -42,7 +42,7 @@ type Request struct {
 	FormData             *map[string]string
 	Headers              *map[string]string
 	IsJSONResponse       bool
-	JSONBody             string
+	JSONBody             map[string]interface{}
 	Method               string
 	QueryStrings         *map[string]string
 	ResponseStruct       interface{}
@@ -80,6 +80,16 @@ func (r Request) Do() Response {
 
 	var err error
 
+	var jsonBodyBytes []byte
+
+	if len(r.JSONBody) > 0 {
+		jsonBodyBytes, err = json.Marshal(r.JSONBody)
+
+		if err != nil {
+			return Response{Error: err}
+		}
+	}
+
 	switch r.Method {
 	case POST:
 		if r.FormData != nil {
@@ -91,19 +101,19 @@ func (r Request) Do() Response {
 
 			req, err = http.NewRequest("POST", fmt.Sprintf("%s%s", r.URL, qs), strings.NewReader(form.Encode()))
 		} else {
-			data := []byte(r.JSONBody)
+			data := jsonBodyBytes
 			req, err = http.NewRequest(POST, fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
 		}
 	case GET:
 		req, err = http.NewRequest(GET, fmt.Sprintf("%s%s", r.URL, qs), nil)
 	case PUT:
-		data := []byte(r.JSONBody)
+		data := jsonBodyBytes
 		req, err = http.NewRequest(PUT, fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
 	case DELETE:
-		data := []byte(r.JSONBody)
+		data := jsonBodyBytes
 		req, err = http.NewRequest(DELETE, fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
 	case PATCH:
-		data := []byte(r.JSONBody)
+		data := jsonBodyBytes
 		req, err = http.NewRequest(PATCH, fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
 	default:
 		return Response{Error: errors.New("invalid method name")}
@@ -119,7 +129,7 @@ func (r Request) Do() Response {
 		}
 	}
 
-	if r.JSONBody != "" {
+	if len(r.JSONBody) > 0 {
 		req.Header.Set("Content-type", "application/json")
 	}
 

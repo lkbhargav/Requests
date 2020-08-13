@@ -187,17 +187,6 @@ func (r Request) Do() Response {
 	return Response{Response: response, StatusCode: resp.StatusCode, Error: nil, Redirects: &redirects}
 }
 
-// Stringify => Takes a struct/map and stringfies it, so it could be used to pass into Request struct for JSONBody
-func Stringify(obj interface{}) (string, error) {
-	out, err := json.Marshal(&obj)
-
-	if err != nil {
-		return "", err
-	}
-
-	return string(out), nil
-}
-
 func parse(data []byte, obj interface{}) error {
 	err := json.Unmarshal(data, obj)
 
@@ -206,18 +195,4 @@ func parse(data []byte, obj interface{}) error {
 	}
 
 	return nil
-}
-
-// ConvertStringToStringPointer => Converts a string to a string pointer
-func ConvertStringToStringPointer(str string) (strPointer *string) {
-	strPointer = &str
-	return strPointer
-}
-
-// ConvertStringArrToArrOfStringPointers => Converts an array of strings to an array of string pointers
-func ConvertStringArrToArrOfStringPointers(arr []string) (pointerString []*string) {
-	for _, v := range arr {
-		pointerString = append(pointerString, ConvertStringToStringPointer(v))
-	}
-	return pointerString
 }

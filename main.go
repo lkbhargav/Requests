@@ -174,7 +174,7 @@ func (r Request) Do() Response {
 			return Response{Error: err}
 		}
 	} else {
-		response = &map[string]interface{}{"response": fmt.Sprintf("%q", body)}
+		response = &map[string]interface{}{"response": string(body)}
 	}
 
 	if r.ResponseStruct != nil {

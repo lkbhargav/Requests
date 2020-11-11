@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	netUrl "net/url"
+	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -30,24 +32,33 @@ var PATCH string = "PATCH"
 // Response => Object that is returned on successful HTTP request
 type Response struct {
 	Error      error
-	Redirects  *[]string
-	Response   *map[string]interface{}
+	Redirects  []string
+	Response   map[string]interface{}
 	StatusCode int
 }
 
 // Request => Object required to make HTTP calls using Do method
 type Request struct {
-	Cookies              *map[string]string
+	Cookies              map[string]string
 	CutsomRedirectMethod func(req *http.Request, via []*http.Request) error
-	FormData             *map[string]string
-	Headers              *map[string]string
+	FormData             map[string]string
+	Headers              map[string]string
 	IsJSONResponse       bool
 	JSONBody             map[string]interface{}
 	Method               string
-	QueryStrings         *map[string]string
+	QueryStrings         map[string]string
 	ResponseStruct       interface{}
-	RequestTimeout       *time.Duration
+	RequestTimeout       time.Duration
 	URL                  string
+}
+
+var structName string = "Structure"
+var temporaryHolder map[string][]string
+var counter int
+
+func init() {
+	temporaryHolder = make(map[string][]string)
+	counter = 0
 }
 
 // Do => Simplified version of net/http Do function
@@ -62,10 +73,10 @@ func (r Request) Do() Response {
 
 	var qs string = "?"
 	var redirects []string
-	var response *map[string]interface{}
+	var response map[string]interface{}
 
 	if r.QueryStrings != nil {
-		for k, v := range *r.QueryStrings {
+		for k, v := range r.QueryStrings {
 			qs += fmt.Sprintf("%s=%s&", k, v)
 		}
 	}
@@ -95,7 +106,7 @@ func (r Request) Do() Response {
 		if r.FormData != nil {
 			form := netUrl.Values{}
 
-			for k, v := range *r.FormData {
+			for k, v := range r.FormData {
 				form.Add(k, v)
 			}
 
@@ -124,7 +135,7 @@ func (r Request) Do() Response {
 	}
 
 	if r.Headers != nil {
-		for k, v := range *r.Headers {
+		for k, v := range r.Headers {
 			req.Header.Set(k, v)
 		}
 	}
@@ -134,15 +145,15 @@ func (r Request) Do() Response {
 	}
 
 	if r.Cookies != nil {
-		for k, v := range *r.Cookies {
+		for k, v := range r.Cookies {
 			cookie := http.Cookie{Name: k, Value: v}
 			req.AddCookie(&cookie)
 		}
 	}
 
 	var timeout time.Duration = 10
-	if r.RequestTimeout != nil {
-		timeout = *r.RequestTimeout
+	if r.RequestTimeout != time.Duration(0*time.Second) {
+		timeout = r.RequestTimeout
 	}
 
 	client := &http.Client{Timeout: time.Second * timeout}
@@ -174,7 +185,15 @@ func (r Request) Do() Response {
 			return Response{Error: err}
 		}
 	} else {
-		response = &map[string]interface{}{"response": string(body)}
+		tmp := make(map[string]interface{})
+
+		err := json.Unmarshal(body, &tmp)
+
+		if err != nil {
+			response = map[string]interface{}{"response": string(body)}
+		} else {
+			response = map[string]interface{}{"response": tmp}
+		}
 	}
 
 	if r.ResponseStruct != nil {
@@ -184,7 +203,7 @@ func (r Request) Do() Response {
 		}
 	}
 
-	return Response{Response: response, StatusCode: resp.StatusCode, Error: nil, Redirects: &redirects}
+	return Response{Response: response, StatusCode: resp.StatusCode, Error: nil, Redirects: redirects}
 }
 
 func parse(data []byte, obj interface{}) error {
@@ -195,4 +214,53 @@ func parse(data []byte, obj interface{}) error {
 	}
 
 	return nil
+}
+
+// GenerateStructure => Takes a map[string]interface{} and prints out the structures
+func GenerateStructure(inpMap map[string]interface{}) {
+	counter++
+	strCounter := strconv.Itoa(counter)
+
+	tempArr := temporaryHolder[structName+strCounter]
+	temporaryHolder[structName+strCounter] = append(tempArr, "type "+structName+"_"+strCounter+" struct {")
+
+	for k, v := range inpMap {
+		key := strings.Title(k)
+		jsonTag := "`json:\"" + k + "\"`"
+		if strings.HasPrefix(fmt.Sprintf("%v", reflect.TypeOf(v)), "map[string]") {
+			tempArr = temporaryHolder[structName+strCounter]
+			temporaryHolder[structName+strCounter] = append(tempArr, "  "+key+"  "+structName+"_"+strconv.Itoa(counter+1)+"  "+jsonTag)
+			GenerateStructure(v.(map[string]interface{}))
+		} else if strings.HasPrefix(fmt.Sprintf("%v", reflect.TypeOf(v)), "[]map[string]") {
+			tempArr = temporaryHolder[structName+strCounter]
+			temporaryHolder[structName+strCounter] = append(tempArr, "  "+key+"  []"+structName+"_"+strconv.Itoa(counter+1)+"  "+jsonTag)
+			GenerateStructure(v.([]map[string]interface{})[0])
+		} else {
+			tempArr = temporaryHolder[structName+strCounter]
+			temporaryHolder[structName+strCounter] = append(tempArr, "  "+key+"  "+fmt.Sprintf("%v", reflect.TypeOf(v))+"  "+jsonTag)
+		}
+	}
+
+	tempArr = temporaryHolder[structName+strCounter]
+	temporaryHolder[structName+strCounter] = append(tempArr, "}")
+
+	for _, i := range temporaryHolder[structName+strCounter] {
+		fmt.Println(i)
+	}
+}
+
+// ConvertMap => Converts an interface{} (currently implemented only for map[string]string & defaulted to map[string]interface{}) to map[string]interface{}
+func ConvertMap(req interface{}) (resp map[string]interface{}) {
+	resp = make(map[string]interface{})
+
+	switch fmt.Sprintf("%v", reflect.TypeOf(req)) {
+	case "map[string]string":
+		for k, v := range req.(map[string]string) {
+			resp[k] = v
+		}
+	default:
+		return req.(map[string]interface{})
+	}
+
+	return
 }

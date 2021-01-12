@@ -1,3 +1,3 @@
-module bitbucket.org/bluegreenbrands/bga-go-requests
+module github.com/lkbhargav/requests
 
 go 1.15

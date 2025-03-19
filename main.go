@@ -38,6 +38,7 @@ type Response struct {
 	Redirects  []string
 	Response   map[string]interface{}
 	StatusCode int
+	Raw        []byte
 }
 
 // Request => Object required to make HTTP calls using Do method
@@ -206,7 +207,7 @@ func (r Request) Do() Response {
 		}
 	}
 
-	return Response{Response: response, StatusCode: resp.StatusCode, Error: nil, Redirects: redirects}
+	return Response{Response: response, Raw: body, StatusCode: resp.StatusCode, Error: nil, Redirects: redirects}
 }
 
 func parse(data []byte, obj interface{}) error {

@@ -17,20 +17,15 @@ import (
 	"golang.org/x/text/language"
 )
 
-// GET => Used for GET request
-var GET string = "GET"
+type Method string
 
-// POST => Used for POST request
-var POST string = "POST"
-
-// PUT => Used for PUT request
-var PUT string = "PUT"
-
-// DELETE => Used for DELETE request
-var DELETE string = "DELETE"
-
-// PATCH => Used for PATCH request
-var PATCH string = "PATCH"
+const (
+	GET    Method = "GET"
+	POST   Method = "POST"
+	PUT    Method = "PUT"
+	DELETE Method = "DELETE"
+	PATCH  Method = "PATCH"
+)
 
 // Response => Object that is returned on successful HTTP request
 type Response struct {
@@ -50,7 +45,7 @@ type Request[T any] struct {
 	IsJSONResponse       bool
 	JSONBody             map[string]interface{}
 	JSONBodyRaw          *T
-	Method               string
+	Method               Method
 	QueryStrings         map[string]string
 	ResponseStruct       interface{}
 	RequestTimeout       time.Duration
@@ -125,19 +120,19 @@ func (r Request[T]) Do() Response {
 			req, err = http.NewRequest("POST", fmt.Sprintf("%s%s", r.URL, qs), strings.NewReader(form.Encode()))
 		} else {
 			data := jsonBodyBytes
-			req, err = http.NewRequest(POST, fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
+			req, err = http.NewRequest(string(POST), fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
 		}
 	case GET:
-		req, err = http.NewRequest(GET, fmt.Sprintf("%s%s", r.URL, qs), nil)
+		req, err = http.NewRequest(string(GET), fmt.Sprintf("%s%s", r.URL, qs), nil)
 	case PUT:
 		data := jsonBodyBytes
-		req, err = http.NewRequest(PUT, fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
+		req, err = http.NewRequest(string(PUT), fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
 	case DELETE:
 		data := jsonBodyBytes
-		req, err = http.NewRequest(DELETE, fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
+		req, err = http.NewRequest(string(DELETE), fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
 	case PATCH:
 		data := jsonBodyBytes
-		req, err = http.NewRequest(PATCH, fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
+		req, err = http.NewRequest(string(PATCH), fmt.Sprintf("%s%s", r.URL, qs), bytes.NewBuffer(data))
 	default:
 		return Response{Error: errors.New("invalid method name")}
 	}
@@ -152,7 +147,7 @@ func (r Request[T]) Do() Response {
 		}
 	}
 
-	if len(r.JSONBody) > 0 {
+	if len(r.JSONBody) > 0 || r.JSONBodyRaw != nil {
 		req.Header.Set("Content-type", "application/json")
 	}
 

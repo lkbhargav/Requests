@@ -5,13 +5,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	netUrl "net/url"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // GET => Used for GET request
@@ -174,7 +177,7 @@ func (r Request) Do() Response {
 
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return Response{Error: err}
 	}
@@ -225,7 +228,8 @@ func GenerateStructure(inpMap map[string]interface{}) {
 	temporaryHolder[structName+strCounter] = append(tempArr, "type "+structName+"_"+strCounter+" struct {")
 
 	for k, v := range inpMap {
-		key := strings.Title(k)
+		caser := cases.Title(language.English)
+		key := caser.String(k)
 		jsonTag := "`json:\"" + k + "\"`"
 		if strings.HasPrefix(fmt.Sprintf("%v", reflect.TypeOf(v)), "map[string]") {
 			tempArr = temporaryHolder[structName+strCounter]

@@ -6,6 +6,8 @@ import (
 	"testing"
 )
 
+const testURL = "https://user-accounts-staging.nocturnal.health"
+
 func runThroughAllCommonConditions(resp Response, t *testing.T, expectedStatusCode int, expectedNumberOfRedirects int) {
 	if resp.Error != nil {
 		t.Errorf("Error wasn't expected. Message: %s", resp.Error.Error())
@@ -27,7 +29,7 @@ func runThroughAllCommonConditions(resp Response, t *testing.T, expectedStatusCo
 func TestSimpleHTTPGETRequestWithoutMethod(t *testing.T) {
 	resp := Request{
 		IsJSONResponse: true,
-		URL:            "https://accounts.bgalytics.com",
+		URL:            testURL,
 	}.Do()
 
 	runThroughAllCommonConditions(resp, t, 200, 0)
@@ -36,7 +38,7 @@ func TestSimpleHTTPGETRequestWithoutMethod(t *testing.T) {
 func TestSimpleGETRequestWithMethod(t *testing.T) {
 	resp := Request{
 		IsJSONResponse: true,
-		URL:            "https://accounts.bgalytics.com",
+		URL:            testURL,
 		Method:         GET,
 	}.Do()
 
@@ -59,7 +61,7 @@ func TestGETRequestResponseString(t *testing.T) {
 
 func TestGETRequestResponseJSON(t *testing.T) {
 	resp := Request{
-		URL: "http://accounts.bgalytics.com",
+		URL: testURL,
 	}.Do()
 
 	if resp.Error != nil {
@@ -70,20 +72,3 @@ func TestGETRequestResponseJSON(t *testing.T) {
 		t.Errorf("Expected the response to be of type map[string]interface {}. Instead found: %v", reflect.TypeOf(resp.Response["response"]))
 	}
 }
-
-// func TestSimplePOSTRequest(t *testing.T) {
-// 	expectedResponse := "This is expected to be sent back as part of response body."
-
-// 	resp := Request{
-// 		URL:    "https://postman-echo.com/post",
-// 		Method: POST,
-// 	}.Do()
-
-// 	runThroughAllCommonConditions(resp, t, 200, 0)
-
-// 	mapResp := (*resp.Response)["response"].(string)
-
-// 	if mapResp != expectedResponse {
-// 		t.Errorf("Expected \"%s\", but found %s", expectedResponse, mapResp)
-// 	}
-// }

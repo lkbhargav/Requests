@@ -42,13 +42,14 @@ type Response struct {
 }
 
 // Request => Object required to make HTTP calls using Do method
-type Request struct {
+type Request[T any] struct {
 	Cookies              map[string]string
 	CutsomRedirectMethod func(req *http.Request, via []*http.Request) error
 	FormData             map[string]string
 	Headers              map[string]string
 	IsJSONResponse       bool
 	JSONBody             map[string]interface{}
+	JSONBodyRaw          *T
 	Method               string
 	QueryStrings         map[string]string
 	ResponseStruct       interface{}
@@ -66,7 +67,7 @@ func init() {
 }
 
 // Do => Simplified version of net/http Do function
-func (r Request) Do() Response {
+func (r Request[T]) Do() Response {
 	if r.URL == "" {
 		return Response{Error: errors.New("url cannot be empty")}
 	}

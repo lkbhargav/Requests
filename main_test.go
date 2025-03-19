@@ -27,7 +27,7 @@ func runThroughAllCommonConditions(resp Response, t *testing.T, expectedStatusCo
 }
 
 func TestSimpleHTTPGETRequestWithoutMethod(t *testing.T) {
-	resp := Request{
+	resp := Request[*int]{
 		IsJSONResponse: true,
 		URL:            testURL,
 	}.Do()
@@ -36,7 +36,7 @@ func TestSimpleHTTPGETRequestWithoutMethod(t *testing.T) {
 }
 
 func TestSimpleGETRequestWithMethod(t *testing.T) {
-	resp := Request{
+	resp := Request[*int]{
 		IsJSONResponse: true,
 		URL:            testURL,
 		Method:         GET,
@@ -46,7 +46,7 @@ func TestSimpleGETRequestWithMethod(t *testing.T) {
 }
 
 func TestGETRequestResponseString(t *testing.T) {
-	resp := Request{
+	resp := Request[*int]{
 		URL: "http://www.google.com",
 	}.Do()
 
@@ -60,7 +60,7 @@ func TestGETRequestResponseString(t *testing.T) {
 }
 
 func TestGETRequestResponseJSON(t *testing.T) {
-	resp := Request{
+	resp := Request[*int]{
 		URL: testURL,
 	}.Do()
 

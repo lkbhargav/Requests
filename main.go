@@ -98,11 +98,18 @@ func (r Request[T]) Do() Response {
 
 	var jsonBodyBytes []byte
 
-	if len(r.JSONBody) > 0 {
-		jsonBodyBytes, err = json.Marshal(r.JSONBody)
+	if r.Method != GET {
+		if r.JSONBodyRaw != nil {
+			jsonBodyBytes, err = json.Marshal(r.JSONBodyRaw)
+			if err != nil {
+				return Response{Error: err}
+			}
+		} else if len(r.JSONBody) > 0 {
+			jsonBodyBytes, err = json.Marshal(r.JSONBody)
 
-		if err != nil {
-			return Response{Error: err}
+			if err != nil {
+				return Response{Error: err}
+			}
 		}
 	}
 
